@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir . \
  && mkdir -p /work /home/sandbox/.cache && chown -R sandbox /work /home/sandbox
 USER sandbox
 ENV SANDBOX_WORKDIR=/work \
-    TRIVY_CACHE_DIR=/home/sandbox/.cache/trivy \
+    TRIVY_CACHE_DIR=/work/.trivy-cache \
     PYTHONUNBUFFERED=1
 EXPOSE 8080
 ENTRYPOINT ["sandbox-mcp"]

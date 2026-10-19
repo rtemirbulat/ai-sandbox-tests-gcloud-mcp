@@ -28,7 +28,7 @@ async def main() -> int:
     ref = sys.argv[4] if len(sys.argv) > 4 else "gh-pages"
     headers = {"x-litellm-api-key": f"Bearer {key}", "Authorization": f"Bearer {key}"}
     http = create_mcp_http_client(headers=headers)
-    async with streamable_http_client(url, http_client=http) as t, Client(t) as c:
+    async with Client(streamable_http_client(url, http_client=http)) as c:
         if True:
             tools = [t.name for t in (await c.list_tools()).tools]
             print("tools:", tools)

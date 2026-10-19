@@ -5,5 +5,5 @@ set -euo pipefail
 BASE="${1:?base url}"; MASTER="${2:?master key}"; ALIAS="${3:?user alias}"
 curl -sS -X POST "$BASE/key/generate" \
   -H "Authorization: Bearer $MASTER" -H "Content-Type: application/json" \
-  -d "{\"key_alias\": \"$ALIAS\", \"user_id\": \"$ALIAS\", \"mcp_servers\": [\"sandbox_mcp\"], \"metadata\": {\"user\": \"$ALIAS\"}}"
+  -d "{\"key_alias\": \"$ALIAS\", \"user_id\": \"$ALIAS\", \"object_permission\": {\"mcp_servers\": [\"sandbox_mcp\"]}, \"metadata\": {\"user\": \"$ALIAS\"}}"
 echo

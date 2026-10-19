@@ -4,6 +4,9 @@ model_list: []
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
+  # Caddy terminates TLS in the same compose network; trust its X-Forwarded-For.
+  use_x_forwarded_for: true
+  mcp_trusted_proxy_ranges: ["172.16.0.0/12"]
 
 mcp_servers:
   sandbox_mcp:

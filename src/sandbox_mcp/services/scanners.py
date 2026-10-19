@@ -72,6 +72,6 @@ def run_trivy(path: Path) -> CheckResult:
     code, text = out
     if code == 0:
         return CheckResult("trivy", "passed", "Уязвимостей HIGH/CRITICAL не найдено")
-    if code == 1:
+    if code == 1 and "FATAL" not in text:
         return CheckResult("trivy", "failed", "Найдены уязвимости HIGH/CRITICAL:\n" + text[-1200:])
     return CheckResult("trivy", "error", f"trivy завершился с кодом {code}: {text[-300:]}")

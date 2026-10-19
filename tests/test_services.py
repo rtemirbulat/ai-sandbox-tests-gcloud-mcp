@@ -48,6 +48,11 @@ def test_trivy_findings(path_with, tmp_path):
     assert r.result == "failed" and "found" in r.summary
 
 
+def test_trivy_fatal_is_error(path_with, tmp_path):
+    path_with("trivy", "echo 'FATAL Fatal error run error: DB error' >&2; exit 1")
+    assert run_trivy(tmp_path).result == "error"
+
+
 def test_missing_binary_is_error(tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", str(tmp_path))
     assert run_trivy(tmp_path).result == "error"

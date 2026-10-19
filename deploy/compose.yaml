@@ -66,11 +66,8 @@ services:
     env_file: .env
     environment:
       SANDBOX_DATABASE_URL: "postgresql+psycopg://sandbox:${POSTGRES_PASSWORD}@postgres:5432/sandbox"
-    volumes:
-      - trivy_cache:/home/sandbox/.cache/trivy
     depends_on: [sandbox-mcp]
 
 volumes:
   caddy_data: {}
   pg_data: {}
-  trivy_cache: {}
