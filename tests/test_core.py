@@ -138,3 +138,18 @@ def test_clone_wrong_sha(local_repo, tmp_path):
     src, _ = local_repo
     with pytest.raises(GitError):
         clone_at(src, "b" * 40, tmp_path / "d3")
+
+
+def test_ensure_schema_adds_missing_column(tmp_path):
+    from sqlalchemy import inspect, text
+
+    from sandbox_mcp.db.schema import ensure_schema
+    from sandbox_mcp.db.session import make_engine
+
+    engine = make_engine(f"sqlite:///{tmp_path}/old.sqlite3")
+    with engine.begin() as c:
+        c.execute(text("CREATE TABLE applications (app_id VARCHAR(40) PRIMARY KEY)"))
+    ensure_schema(engine)
+    ensure_schema(engine)  # idempotent
+    cols = {c["name"] for c in inspect(engine).get_columns("applications")}
+    assert "git_ref" in cols

@@ -24,12 +24,12 @@ def main() -> None:
     else:
         if not args.user:
             p.error("token requires <user>")
-        from sandbox_mcp.db.models import Base
         from sandbox_mcp.db.repo import Repository
+        from sandbox_mcp.db.schema import ensure_schema
         from sandbox_mcp.db.session import make_engine, make_session_factory
 
         engine = make_engine(settings.database_url)
-        Base.metadata.create_all(engine)
+        ensure_schema(engine)
         print(Repository(make_session_factory(engine)).create_user_token(args.user))
 
 

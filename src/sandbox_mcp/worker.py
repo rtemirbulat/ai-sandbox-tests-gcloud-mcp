@@ -1,8 +1,8 @@
 import logging
 import time
 
-from sandbox_mcp.db.models import Base
 from sandbox_mcp.db.repo import Repository
+from sandbox_mcp.db.schema import ensure_schema
 from sandbox_mcp.db.session import make_engine, make_session_factory
 from sandbox_mcp.services.coolify import CoolifyError, make_coolify_client
 from sandbox_mcp.services.pipeline import run_job
@@ -39,7 +39,7 @@ def sweep_expired(repo: Repository, coolify) -> int:
 
 def run_worker(settings: Settings) -> None:
     engine = make_engine(settings.database_url)
-    Base.metadata.create_all(engine)
+    ensure_schema(engine)
     repo = Repository(make_session_factory(engine))
     coolify = make_coolify_client(settings)
     log.info("worker started (coolify_fake=%s)", settings.coolify_fake)

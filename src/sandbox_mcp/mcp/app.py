@@ -9,8 +9,8 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Mount, Route
 
-from sandbox_mcp.db.models import Base
 from sandbox_mcp.db.repo import Repository
+from sandbox_mcp.db.schema import ensure_schema
 from sandbox_mcp.db.session import make_engine, make_session_factory
 from sandbox_mcp.mcp.server import build_mcp
 from sandbox_mcp.settings import Settings
@@ -38,7 +38,7 @@ class GatewayTokenMiddleware(BaseHTTPMiddleware):
 
 def build_app(settings: Settings) -> Starlette:
     engine = make_engine(settings.database_url)
-    Base.metadata.create_all(engine)
+    ensure_schema(engine)
     repo = Repository(make_session_factory(engine))
     mcp = build_mcp(repo, settings)
 
