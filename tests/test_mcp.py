@@ -9,6 +9,7 @@ from sandbox_mcp.db.models import utcnow
 from sandbox_mcp.mcp.app import build_app
 from sandbox_mcp.mcp.server import build_mcp
 from sandbox_mcp.services.coolify import FakeCoolifyClient
+from sandbox_mcp.services.identity import StaticIdentityResolver
 from sandbox_mcp.settings import Settings
 
 pytestmark = pytest.mark.anyio
@@ -19,7 +20,7 @@ def mcp(repo, tmp_path, monkeypatch):
     s = Settings(_env_file=None, gateway_token="t", workdir=str(tmp_path / "w"))
     # tests use local paths instead of github URLs
     monkeypatch.setattr("sandbox_mcp.mcp.server.validate_github_url", lambda u: u)
-    return build_mcp(repo, s)
+    return build_mcp(repo, s, resolver=StaticIdentityResolver("tester"))
 
 
 async def _assess(c, local_repo, name="Demo", classes=None):

@@ -10,19 +10,11 @@ from pydantic import Field
 from sandbox_mcp.db.repo import Repository
 from sandbox_mcp.services.detect import detect_kind
 from sandbox_mcp.services.git import GitError, clone_at, validate_github_url
+from sandbox_mcp.services.identity import IdentityResolver
 from sandbox_mcp.services.rules import assess
 from sandbox_mcp.settings import Settings
 
 _SHA = re.compile(r"^[0-9a-f]{40}$")
-# Candidate identity headers forwarded by LiteLLM MCP Gateway; verified on integration.
-ACTOR_HEADERS = (
-    "x-litellm-user-email",
-    "x-litellm-user-id",
-    "x-litellm-key-alias",
-    "x-litellm-api-key-alias",
-    "x-forwarded-user",
-)
-
 NEXT_ACTION = {
     "queued": "Задание в очереди. Вызовите status через 30–60 секунд.",
     "running": "Идут проверки и деплой. Вызовите status через 30–60 секунд.",
@@ -44,14 +36,6 @@ INSTRUCTIONS = (
 )
 
 
-def actor_from(ctx: Context) -> str:
-    headers = ctx.headers or {}
-    for h in ACTOR_HEADERS:
-        if headers.get(h):
-            return headers[h]
-    return "unknown"
-
-
 def _owns(actor: str, owner: str) -> bool:
     return actor == "unknown" or owner == "unknown" or actor == owner
 
@@ -61,7 +45,14 @@ def _ensure(path: str) -> str:
     return path
 
 
-def build_mcp(repo: Repository, settings: Settings) -> MCPServer:
+def build_mcp(repo: Repository, settings: Settings, resolver=None) -> MCPServer:
+    resolver = resolver or IdentityResolver(
+        settings.litellm_url, cache_seconds=settings.identity_cache_seconds
+    )
+
+    def actor_from(ctx: Context) -> str:
+        return resolver.resolve(ctx.headers)
+
     mcp = MCPServer("sandbox", version="0.1.0", instructions=INSTRUCTIONS)
 
     @mcp.tool()

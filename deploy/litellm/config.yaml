@@ -15,3 +15,5 @@ mcp_servers:
     description: "BI Sandbox: assess_application, validate_and_deploy, status"
     auth_type: "bearer_token"
     auth_value: os.environ/SANDBOX_GATEWAY_TOKEN
+    # Forward the caller's virtual key so sandbox-mcp can resolve the user via /key/info.
+    extra_headers: ["x-litellm-api-key"]

@@ -19,3 +19,5 @@ class Settings(BaseSettings):
     port: int = 8080
     lease_seconds: int = 600
     deploy_timeout_seconds: int = 900
+    litellm_url: str = "http://litellm:4000"
+    identity_cache_seconds: int = 300
