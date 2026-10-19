@@ -112,7 +112,12 @@ def run_job(job_id: str, repo: Repository, settings: Settings, coolify: CoolifyC
         except CoolifyError as e:
             record(CheckResult("coolify_deploy", "error", str(e)), "coolify_deploy")
 
-        record(smoke_get(url, 60), "smoke")
+        if settings.coolify_fake:
+            record(
+                CheckResult("smoke", "skipped", "Coolify в fake-режиме, URL не проверялся"), "smoke"
+            )
+        else:
+            record(smoke_get(url, 60), "smoke")
 
         repo.update_job(
             job_id,

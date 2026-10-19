@@ -161,6 +161,7 @@ def test_happy_path_then_redeploy(repo, settings, local_repo, quiet_scanners):
         "clone", "detect", "gitleaks", "trivy", "coolify_create", "coolify_deploy", "smoke",
     ]  # fmt: skip
     assert repo.get_application(app.app_id).coolify_uuid == "fake-app-1"
+    assert j.checks[-1]["result"] == "skipped"  # fake Coolify: smoke is skipped
     # second deploy reuses the Coolify application
     job2, _ = repo.get_or_create_job(app.app_id, sha, "TEST", "k2")
     pipeline.run_job(job2.job_id, repo, settings, coolify)
