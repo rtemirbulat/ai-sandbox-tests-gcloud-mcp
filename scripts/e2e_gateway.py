@@ -1,6 +1,6 @@
 """End-to-end check through LiteLLM MCP Gateway.
 
-usage: scripts/e2e_gateway.py <gateway_mcp_url> <virtual_key> <sandbox_token> [repo_url] [git_ref]
+usage: e2e_gateway.py <gateway_mcp_url> <virtual_key> <sandbox_token> [repo] [ref] [--redeploy]
 
 Example: scripts/e2e_gateway.py http://localhost:4000/sandbox_mcp/mcp sk-... <token> \
          https://github.com/github/choosealicense.com gh-pages
@@ -24,8 +24,9 @@ def _out(res):
 
 async def main() -> int:
     url, key, token = sys.argv[1], sys.argv[2], sys.argv[3]
-    repo = sys.argv[4] if len(sys.argv) > 4 else "https://github.com/github/choosealicense.com"
-    ref = sys.argv[5] if len(sys.argv) > 5 else "gh-pages"
+    pos = [x for x in sys.argv[4:] if not x.startswith("--")]
+    repo = pos[0] if pos else "https://github.com/github/choosealicense.com"
+    ref = pos[1] if len(pos) > 1 else "gh-pages"
     headers = {"x-litellm-api-key": f"Bearer {key}", "x-sandbox-token": token}
     http = create_mcp_http_client(headers=headers)
     async with Client(streamable_http_client(url, http_client=http)) as c:
@@ -60,14 +61,34 @@ async def main() -> int:
                 )
             )
             print("deploy:", d)
-            deadline = time.time() + 600
-            while time.time() < deadline:
-                s = _out(await c.call_tool(name("status"), {"job_id": d["job_id"]}))
-                print(f"status: {s['state']}/{s['stage']}")
-                if s["state"] in ("succeeded", "blocked", "failed"):
-                    print(json.dumps(s, ensure_ascii=False, indent=1))
-                    return 0 if s["state"] == "succeeded" else 2
-                await anyio.sleep(5)
+            rc = await _wait(c, name("status"), d["job_id"])
+            if rc != 0 or "--redeploy" not in sys.argv:
+                return rc
+            # Second release of the same app: exercises Coolify update + redeploy.
+            d2 = _out(
+                await c.call_tool(
+                    name("validate_and_deploy"),
+                    {
+                        "app_id": a["app_id"],
+                        "commit_sha": a["commit_sha"],
+                        "env": "TEST",
+                        "idempotency_key": str(uuid.uuid4()),
+                    },
+                )
+            )
+            print("redeploy:", d2)
+            return await _wait(c, name("status"), d2["job_id"])
+
+
+async def _wait(c, status_tool: str, job_id: str) -> int:
+    deadline = time.time() + 900
+    while time.time() < deadline:
+        s = _out(await c.call_tool(status_tool, {"job_id": job_id}))
+        print(f"status: {s['state']}/{s['stage']}")
+        if s["state"] in ("succeeded", "blocked", "failed"):
+            print(json.dumps(s, ensure_ascii=False, indent=1))
+            return 0 if s["state"] == "succeeded" else 2
+        await anyio.sleep(5)
     print("timeout")
     return 3
 

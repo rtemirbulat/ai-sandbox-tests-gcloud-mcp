@@ -48,9 +48,9 @@ claude mcp add --transport http sandbox http://localhost:4000/sandbox_mcp/mcp \
   --header "x-litellm-api-key: Bearer sk-<virtual key>" --header "x-sandbox-token: <token>"
 ```
 
-Пока `SANDBOX_COOLIFY_FAKE=true`, деплой имитируется: задание проходит все стадии, URL
-вида `https://<slug>.<SANDBOX_APPS_BASE_DOMAIN>` возвращается без реального приложения.
-Smoke-проверка в fake-режиме пропускается.
+При `SANDBOX_COOLIFY_FAKE=true` деплой имитируется: задание проходит все стадии, URL
+вида `https://<slug>.<SANDBOX_APPS_BASE_DOMAIN>` возвращается без реального приложения,
+smoke-проверка пропускается. Это режим для локальной разработки и юнит-тестов.
 
 ## VM в GCP
 
@@ -65,6 +65,20 @@ infra/sandbox-token.sh <user>                                          # identit
 
 Проект `project-c6b97dc5-607e-455a-910`, аккаунт `temirbulat_r@bi.group`. Параметры
 переопределяются переменными `PROJECT`, `ACCOUNT`, `ZONE`, `NAME`, `MACHINE`.
+
+## Стенд Coolify (пилот)
+
+Реальный Coolify 4.4.6 живёт на VM `sandbox-coolify` (34.179.210.136, стенд из
+`../ai-sandbox-tests-gcloud`). Для MCP там созданы API-токен `sandbox-mcp` (root, хранится в
+`.secrets/coolify-token.txt` и `deploy/.env`) и проект `bi-sandbox`, окружение `production`,
+сервер `localhost`. Приложения получают адреса `https://<slug>.sandbox.34-179-210-136.sslip.io`
+с сертификатами Let's Encrypt от Traefik Coolify. Проверено 19.10.2026 через LiteLLM: статика
+из `github/choosealicense.com` задеплоена, smoke 200, повторный выпуск переиспользует
+приложение Coolify; репозиторий `gitleaks/gitleaks` остановлен на стадии Gitleaks (`blocked`).
+
+Ограничение: VM Coolify по расписанию останавливается 21.10.2026 в 23:59 Asia/Aqtobe
+(`scheduling.terminationTime`); после этого деплой падает в `failed` на `coolify_create` до
+запуска VM. TTL-уборка worker удаляет приложения через `SANDBOX_TTL_DAYS`.
 
 ## Переменные окружения (`SANDBOX_*`)
 
@@ -92,5 +106,6 @@ infra/sandbox-token.sh <user>                                          # identit
 
 ## Что ещё не сделано
 
-- Реальный Coolify: адрес и токен появятся после стенда из `../ai-sandbox-tests-gcloud`.
+- Публичный репозиторий как единственный источник кода; приватные репозитории (deploy key) не поддержаны.
+- Alembic нет: схема создаётся `ensure_schema` (create_all + аддитивные ALTER).
 - PROD, IT-комитет, реестр систем, OpenMetadata, корпоративный Keycloak — вне пилота.

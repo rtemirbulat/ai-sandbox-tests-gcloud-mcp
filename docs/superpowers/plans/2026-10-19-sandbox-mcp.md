@@ -1943,9 +1943,9 @@ $G compute ssh $NAME --zone $ZONE --tunnel-through-iap --command \
 
 ### Task 13: Real Coolify (when the Codex stand is available)
 
-- [ ] Fill `SANDBOX_COOLIFY_URL/TOKEN/PROJECT_UUID/SERVER_UUID`, `SANDBOX_APPS_BASE_DOMAIN` (wildcard `*.<coolify-ip>.sslip.io` or a real domain), set `SANDBOX_COOLIFY_FAKE=false`, redeploy.
-- [ ] E2E: public static repo → `assess_application` → `validate_and_deploy` → `status` reaches `succeeded` with a working URL; `blocked` path verified with a repo containing a fake AWS key in a file.
-- [ ] Fix field names against the real Coolify API response (`deployments[0].deployment_uuid`, `fqdn`) if they differ; add a regression test in `tests/test_coolify.py`.
+- [x] Fill `SANDBOX_COOLIFY_URL/TOKEN/PROJECT_UUID/SERVER_UUID`, `SANDBOX_APPS_BASE_DOMAIN` (wildcard `*.<coolify-ip>.sslip.io` or a real domain), set `SANDBOX_COOLIFY_FAKE=false`, redeploy.
+- [x] E2E: public static repo → `assess_application` → `validate_and_deploy` → `status` reaches `succeeded` with a working URL; `blocked` path verified with a repo containing a fake AWS key in a file.
+- [x] Fix field names against the real Coolify API response (`deployments[0].deployment_uuid`, `fqdn`) if they differ; add a regression test in `tests/test_coolify.py`.
 
 ---
 
@@ -1958,4 +1958,4 @@ $G compute ssh $NAME --zone $ZONE --tunnel-through-iap --command \
 
 ## Status 19.10.2026
 
-Tasks 1–12 done and verified on VM `sandbox-mcp` (35.234.71.242): e2e via LiteLLM gateway reaches `succeeded` with fake Coolify; owner resolved via sandbox token. Deviation from plan: identity is a separate `x-sandbox-token` (LiteLLM scrubs its own keys from forwarded headers), not LiteLLM headers. Task 13 (real Coolify) pending the Codex stand.
+Tasks 1–12 done and verified on VM `sandbox-mcp` (35.234.71.242): e2e via LiteLLM gateway reaches `succeeded` with fake Coolify; owner resolved via sandbox token. Deviation from plan: identity is a separate `x-sandbox-token` (LiteLLM scrubs its own keys from forwarded headers), not LiteLLM headers. Task 13 done 19.10.2026: real Coolify on sandbox-coolify (project bi-sandbox), e2e succeeded with HTTPS URL and smoke 200, redeploy reuses the Coolify app, blocked path verified on gitleaks/gitleaks. API fields matched the client; fixes along the way: git_ref stored per application (was hardcoded main), ensure_schema for the added column.
