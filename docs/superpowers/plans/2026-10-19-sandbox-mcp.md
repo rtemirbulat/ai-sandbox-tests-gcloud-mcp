@@ -69,7 +69,7 @@ ai-sandbox-tests-gcloud-mcp/
 
 **Files:** Create `pyproject.toml`, `Makefile`, `.gitignore`, `.env.example`, `src/sandbox_mcp/__init__.py`, `src/sandbox_mcp/settings.py`, `tests/conftest.py`, `tests/test_settings.py`.
 
-- [ ] **Step 1: pyproject.toml**
+- [x] **Step 1: pyproject.toml**
 
 ```toml
 [project]
@@ -112,7 +112,7 @@ target-version = "py313"
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ```
 
-- [ ] **Step 2: Makefile, .gitignore, .env.example**
+- [x] **Step 2: Makefile, .gitignore, .env.example**
 
 ```make
 PY=.venv/bin/python
@@ -149,7 +149,7 @@ SANDBOX_TTL_DAYS=14
 SANDBOX_WORKDIR=/tmp/sandbox-mcp
 ```
 
-- [ ] **Step 3: failing test `tests/test_settings.py`**
+- [x] **Step 3: failing test `tests/test_settings.py`**
 
 ```python
 from sandbox_mcp.settings import Settings
@@ -163,7 +163,7 @@ def test_settings_defaults(monkeypatch):
     assert s.database_url.startswith("sqlite")
 ```
 
-- [ ] **Step 4: `src/sandbox_mcp/settings.py`**
+- [x] **Step 4: `src/sandbox_mcp/settings.py`**
 
 ```python
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -189,7 +189,7 @@ class Settings(BaseSettings):
     deploy_timeout_seconds: int = 900
 ```
 
-- [ ] **Step 5: install, run, commit**
+- [x] **Step 5: install, run, commit**
 
 Run: `make install && make test` → 1 passed.
 ```bash
@@ -202,7 +202,7 @@ git add -A && git commit -m "chore: project skeleton with settings"
 
 **Files:** Create `src/sandbox_mcp/ids.py`, `src/sandbox_mcp/db/__init__.py`, `models.py`, `session.py`, `repo.py`; tests `tests/test_repo.py`, `tests/conftest.py`.
 
-- [ ] **Step 1: failing tests**
+- [x] **Step 1: failing tests**
 
 `tests/conftest.py`:
 ```python
@@ -262,7 +262,7 @@ def test_job_idempotent_and_claim(repo):
     assert repo.get_job(j1.job_id).checks[0]["name"] == "clone"
 ```
 
-- [ ] **Step 2: `ids.py`**
+- [x] **Step 2: `ids.py`**
 
 ```python
 import re
@@ -289,7 +289,7 @@ def slugify(name: str) -> str:
     return s[:40] or "app"
 ```
 
-- [ ] **Step 3: `db/models.py`**
+- [x] **Step 3: `db/models.py`**
 
 ```python
 from datetime import datetime
@@ -337,7 +337,7 @@ class Job(Base):
                                                  onupdate=datetime.utcnow)
 ```
 
-- [ ] **Step 4: `db/session.py`**
+- [x] **Step 4: `db/session.py`**
 
 ```python
 from sqlalchemy import create_engine
@@ -353,7 +353,7 @@ def make_session_factory(engine) -> sessionmaker[Session]:
     return sessionmaker(engine, expire_on_commit=False)
 ```
 
-- [ ] **Step 5: `db/repo.py`**
+- [x] **Step 5: `db/repo.py`**
 
 ```python
 from datetime import datetime, timedelta
@@ -441,7 +441,7 @@ class Repository:
                 (Job.state == "succeeded") & (Job.expires_at < datetime.utcnow()))))
 ```
 
-- [ ] **Step 6: run + commit**
+- [x] **Step 6: run + commit**
 
 Run: `make test` → 5 passed. `git commit -am "feat: ids, models, repository"` (after `git add -A`).
 
@@ -451,7 +451,7 @@ Run: `make test` → 5 passed. `git commit -am "feat: ids, models, repository"` 
 
 **Files:** Create `src/sandbox_mcp/services/__init__.py`, `git.py`, `detect.py`; tests `tests/test_git.py`, `tests/test_detect.py`.
 
-- [ ] **Step 1: failing tests**
+- [x] **Step 1: failing tests**
 
 `tests/test_detect.py`:
 ```python
@@ -532,7 +532,7 @@ def test_clone_wrong_sha(local_repo, tmp_path):
         clone_at(str(src), "b" * 40, tmp_path / "d3")
 ```
 
-- [ ] **Step 2: `services/git.py`**
+- [x] **Step 2: `services/git.py`**
 
 ```python
 import re
@@ -581,7 +581,7 @@ def clone_at(url: str, ref: str, dest: Path) -> str:
     return sha
 ```
 
-- [ ] **Step 3: `services/detect.py`**
+- [x] **Step 3: `services/detect.py`**
 
 ```python
 import json
@@ -620,7 +620,7 @@ def publish_directory(path: Path) -> str:
     return "/"
 ```
 
-- [ ] **Step 4: run + commit** → `make test` all pass; `git add -A && git commit -m "feat: git clone-at and project kind detection"`.
+- [x] **Step 4: run + commit** → `make test` all pass; `git add -A && git commit -m "feat: git clone-at and project kind detection"`.
 
 ---
 
@@ -628,7 +628,7 @@ def publish_directory(path: Path) -> str:
 
 **Files:** Create `src/sandbox_mcp/services/rules.py`; test `tests/test_rules.py`.
 
-- [ ] **Step 1: failing test**
+- [x] **Step 1: failing test**
 
 ```python
 from sandbox_mcp.services.rules import REQUIREMENTS_VERSION, assess
@@ -655,7 +655,7 @@ def test_unknown_class_rejected():
     assert r.decision == "rejected"
 ```
 
-- [ ] **Step 2: `services/rules.py`**
+- [x] **Step 2: `services/rules.py`**
 
 ```python
 from dataclasses import dataclass, field
@@ -697,7 +697,7 @@ def assess(kind: str, data_classes: list[str]) -> Assessment:
     return Assessment("allowed", requirements=TEST_REQUIREMENTS)
 ```
 
-- [ ] **Step 3: run + commit** → `git add -A && git commit -m "feat: admission rules R1"`.
+- [x] **Step 3: run + commit** → `git add -A && git commit -m "feat: admission rules R1"`.
 
 ---
 
@@ -705,7 +705,7 @@ def assess(kind: str, data_classes: list[str]) -> Assessment:
 
 **Files:** Create `src/sandbox_mcp/services/scanners.py`; test `tests/test_scanners.py`.
 
-- [ ] **Step 1: failing test** (fakes the binaries with shell scripts on PATH)
+- [x] **Step 1: failing test** (fakes the binaries with shell scripts on PATH)
 
 ```python
 import os
@@ -758,7 +758,7 @@ def test_missing_binary_is_error(path_with, tmp_path, monkeypatch):
 
 Note: in the gitleaks fake the report path is passed via `--report-path`; the implementation must export it as `REPORT` env var for the fake to see it. Simpler: the implementation always passes `--report-path <workdir>/gitleaks.json` **and** sets `env={"REPORT": that_path, **os.environ}`. (Harmless in production.)
 
-- [ ] **Step 2: `services/scanners.py`**
+- [x] **Step 2: `services/scanners.py`**
 
 ```python
 import json
@@ -826,7 +826,7 @@ def run_trivy(path: Path) -> CheckResult:
     return CheckResult("trivy", "error", f"trivy завершился с кодом {code}: {text[-300:]}")
 ```
 
-- [ ] **Step 3: run + commit** → `git add -A && git commit -m "feat: gitleaks and trivy scanners"`.
+- [x] **Step 3: run + commit** → `git add -A && git commit -m "feat: gitleaks and trivy scanners"`.
 
 ---
 
@@ -834,7 +834,7 @@ def run_trivy(path: Path) -> CheckResult:
 
 **Files:** Create `src/sandbox_mcp/services/coolify.py`; test `tests/test_coolify.py`.
 
-- [ ] **Step 1: failing test**
+- [x] **Step 1: failing test**
 
 ```python
 import httpx
@@ -885,7 +885,7 @@ def test_http_client_calls(monkeypatch):
     assert all(a == "Bearer tok" for _, _, a in calls)
 ```
 
-- [ ] **Step 2: `services/coolify.py`**
+- [x] **Step 2: `services/coolify.py`**
 
 ```python
 from dataclasses import dataclass
@@ -1016,7 +1016,7 @@ def make_coolify_client(settings) -> CoolifyClient:
                              environment_name=settings.coolify_environment_name)
 ```
 
-- [ ] **Step 3: run + commit** → `git add -A && git commit -m "feat: coolify client with fake"`.
+- [x] **Step 3: run + commit** → `git add -A && git commit -m "feat: coolify client with fake"`.
 
 ---
 
@@ -1024,7 +1024,7 @@ def make_coolify_client(settings) -> CoolifyClient:
 
 **Files:** Create `src/sandbox_mcp/services/pipeline.py`; test `tests/test_pipeline.py`.
 
-- [ ] **Step 1: failing test** (uses local git repo fixture; scanners monkeypatched)
+- [x] **Step 1: failing test** (uses local git repo fixture; scanners monkeypatched)
 
 ```python
 import subprocess
@@ -1110,7 +1110,7 @@ def test_bad_sha_fails_at_clone(repo, settings, repo_with_commit):
     assert j.state == "failed" and j.stage == "clone" and j.error
 ```
 
-- [ ] **Step 2: `services/pipeline.py`**
+- [x] **Step 2: `services/pipeline.py`**
 
 ```python
 import logging
@@ -1238,7 +1238,7 @@ def run_job(job_id: str, repo: Repository, settings: Settings, coolify: CoolifyC
         shutil.rmtree(workdir, ignore_errors=True)
 ```
 
-- [ ] **Step 3: run + commit** → `git add -A && git commit -m "feat: job pipeline clone→scan→coolify→smoke"`.
+- [x] **Step 3: run + commit** → `git add -A && git commit -m "feat: job pipeline clone→scan→coolify→smoke"`.
 
 ---
 
@@ -1246,7 +1246,7 @@ def run_job(job_id: str, repo: Repository, settings: Settings, coolify: CoolifyC
 
 **Files:** Create `src/sandbox_mcp/mcp/__init__.py`, `src/sandbox_mcp/mcp/server.py`; test `tests/test_mcp_tools.py`.
 
-- [ ] **Step 1: failing test**
+- [x] **Step 1: failing test**
 
 ```python
 import subprocess
@@ -1334,7 +1334,7 @@ async def test_personal_data_blocks_deploy(mcp, local_repo):
         assert d["error"] == "not_allowed"
 ```
 
-- [ ] **Step 2: `mcp/server.py`**
+- [x] **Step 2: `mcp/server.py`**
 
 ```python
 import re
@@ -1471,7 +1471,7 @@ def _ensure(path: str) -> str:
     return path
 ```
 
-- [ ] **Step 3: run + commit** → `make test`; `git add -A && git commit -m "feat: MCP tools assess/validate_and_deploy/status"`.
+- [x] **Step 3: run + commit** → `make test`; `git add -A && git commit -m "feat: MCP tools assess/validate_and_deploy/status"`.
 
 ---
 
@@ -1479,7 +1479,7 @@ def _ensure(path: str) -> str:
 
 **Files:** Create `src/sandbox_mcp/mcp/app.py`, `src/sandbox_mcp/worker.py`, `src/sandbox_mcp/cli.py`; test `tests/test_app_auth.py`, `tests/test_worker.py`.
 
-- [ ] **Step 1: failing tests**
+- [x] **Step 1: failing tests**
 
 `tests/test_app_auth.py`:
 ```python
@@ -1533,7 +1533,7 @@ def test_tick_runs_claimed_job(repo, monkeypatch):
     assert worker.tick(repo, settings=None, coolify=None, lease_seconds=60) is False
 ```
 
-- [ ] **Step 2: `mcp/app.py`**
+- [x] **Step 2: `mcp/app.py`**
 
 ```python
 import contextlib
@@ -1593,7 +1593,7 @@ def build_app(settings: Settings) -> Starlette:
 
 Note: `host` in `streamable_http_app` configures DNS-rebinding protection (allowed Host header). If LiteLLM calls the service as `sandbox-mcp:8080`, pass `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)` instead (import from `mcp.server.transport_security`). Decide during Task 11 integration; start with protection disabled behind the token.
 
-- [ ] **Step 3: `worker.py`**
+- [x] **Step 3: `worker.py`**
 
 ```python
 import logging
@@ -1651,7 +1651,7 @@ def run_worker(settings: Settings) -> None:
             time.sleep(5)
 ```
 
-- [ ] **Step 4: `cli.py`**
+- [x] **Step 4: `cli.py`**
 
 ```python
 import argparse
@@ -1680,7 +1680,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 5: run + lint + commit** → `make test && make lint`; `git add -A && git commit -m "feat: starlette app with gateway token, worker loop, cli"`.
+- [x] **Step 5: run + lint + commit** → `make test && make lint`; `git add -A && git commit -m "feat: starlette app with gateway token, worker loop, cli"`.
 
 ---
 
@@ -1688,7 +1688,7 @@ if __name__ == "__main__":
 
 **Files:** Create `Dockerfile`, `deploy/compose.yaml`, `deploy/Caddyfile`, `deploy/litellm/config.yaml`, `deploy/postgres/init.sql`, `deploy/.env.example`.
 
-- [ ] **Step 1: `Dockerfile`**
+- [x] **Step 1: `Dockerfile`**
 
 ```dockerfile
 FROM python:3.13-slim
@@ -1709,7 +1709,7 @@ ENTRYPOINT ["sandbox-mcp"]
 CMD ["serve"]
 ```
 
-- [ ] **Step 2: `deploy/compose.yaml`**
+- [x] **Step 2: `deploy/compose.yaml`**
 
 ```yaml
 services:
@@ -1780,7 +1780,7 @@ volumes:
   pg_data: {}
 ```
 
-- [ ] **Step 3: `deploy/Caddyfile`, `deploy/postgres/init.sql`, `deploy/litellm/config.yaml`, `deploy/.env.example`**
+- [x] **Step 3: `deploy/Caddyfile`, `deploy/postgres/init.sql`, `deploy/litellm/config.yaml`, `deploy/.env.example`**
 
 Caddyfile:
 ```
@@ -1826,7 +1826,7 @@ SANDBOX_APPS_BASE_DOMAIN=apps.example
 SANDBOX_TTL_DAYS=14
 ```
 
-- [ ] **Step 4: build and run locally**
+- [x] **Step 4: build and run locally**
 
 ```bash
 cp deploy/.env.example deploy/.env   # then set real random values
@@ -1835,13 +1835,13 @@ curl -s localhost:4000/health/liveliness   # litellm alive (expose→ add tempor
 ```
 Expected: all four containers `Up`; `docker compose logs sandbox-mcp` shows uvicorn on 8080.
 
-- [ ] **Step 5: commit** → `git add -A && git commit -m "build: dockerfile and compose with litellm, postgres, caddy"`.
+- [x] **Step 5: commit** → `git add -A && git commit -m "build: dockerfile and compose with litellm, postgres, caddy"`.
 
 ---
 
 ### Task 11: Local integration through LiteLLM + Claude Code
 
-- [ ] **Step 1: create a virtual key** (`infra/litellm-key.sh`)
+- [x] **Step 1: create a virtual key** (`infra/litellm-key.sh`)
 
 ```bash
 #!/usr/bin/env bash
@@ -1851,7 +1851,7 @@ curl -sS -X POST "$1/key/generate" -H "Authorization: Bearer $2" -H "Content-Typ
   -d "{\"key_alias\": \"$3\", \"mcp_servers\": [\"sandbox_mcp\"], \"metadata\": {\"user\": \"$3\"}}"
 ```
 
-- [ ] **Step 2: verify tools over the gateway with the SDK client**
+- [x] **Step 2: verify tools over the gateway with the SDK client**
 
 ```bash
 .venv/bin/python - <<'EOF'
@@ -1867,7 +1867,7 @@ EOF
 ```
 Expected: `['assess_application', 'validate_and_deploy', 'status']` (names may be prefixed `sandbox_mcp-` on the aggregate `/mcp` endpoint; on `/sandbox_mcp/mcp` they are plain).
 
-- [ ] **Step 3: connect Claude Code**
+- [x] **Step 3: connect Claude Code**
 
 ```bash
 claude mcp add --transport http sandbox http://localhost:4000/sandbox_mcp/mcp \
@@ -1876,7 +1876,7 @@ claude mcp list
 ```
 In Claude Code: ask to assess `https://github.com/<public static repo>` → `validate_and_deploy` → `status` shows `succeeded` with fake URL.
 
-- [ ] **Step 4: record what LiteLLM forwards** — in `sandbox-mcp` logs print request headers once (temporary debug) to learn which identity headers arrive; update `ACTOR_HEADERS` in `mcp/server.py` accordingly; remove debug. Commit: `fix: actor headers as forwarded by LiteLLM`.
+- [x] **Step 4: record what LiteLLM forwards** — in `sandbox-mcp` logs print request headers once (temporary debug) to learn which identity headers arrive; update `ACTOR_HEADERS` in `mcp/server.py` accordingly; remove debug. Commit: `fix: actor headers as forwarded by LiteLLM`.
 
 ---
 
@@ -1884,7 +1884,7 @@ In Claude Code: ask to assess `https://github.com/<public static repo>` → `val
 
 **Files:** Create `infra/create-vm.sh`, `infra/deploy.sh`; update `README.md`.
 
-- [ ] **Step 1: `infra/create-vm.sh`**
+- [x] **Step 1: `infra/create-vm.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -1916,7 +1916,7 @@ IP=$($G compute instances describe $NAME --zone $ZONE --format='get(networkInter
 echo "VM $NAME ready. IP=$IP  MCP_DOMAIN=mcp.${IP//./-}.sslip.io"
 ```
 
-- [ ] **Step 2: `infra/deploy.sh`**
+- [x] **Step 2: `infra/deploy.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -1935,9 +1935,9 @@ $G compute ssh $NAME --zone $ZONE --tunnel-through-iap --command \
 ```
 `deploy/.env` is created on the VM once by hand (or scp'd from `.secrets/`), never committed.
 
-- [ ] **Step 3: run create-vm, write `.secrets/deploy.env`, scp it to `/opt/sandbox-mcp/deploy/.env`, run deploy.sh.** Verify: `curl https://mcp.<ip>.sslip.io/health/liveliness` → LiteLLM alive; `claude mcp add` with the public URL; tools listed.
+- [x] **Step 3: run create-vm, write `.secrets/deploy.env`, scp it to `/opt/sandbox-mcp/deploy/.env`, run deploy.sh.** Verify: `curl https://mcp.<ip>.sslip.io/health/liveliness` → LiteLLM alive; `claude mcp add` with the public URL; tools listed.
 
-- [ ] **Step 4: README.md** describing: purpose, architecture picture (text), how to run tests, local compose, VM deploy, Claude Code connection, env variables, and what is fake until Coolify exists. Commit: `docs: README and infra scripts`.
+- [x] **Step 4: README.md** describing: purpose, architecture picture (text), how to run tests, local compose, VM deploy, Claude Code connection, env variables, and what is fake until Coolify exists. Commit: `docs: README and infra scripts`.
 
 ---
 
@@ -1954,3 +1954,8 @@ $G compute ssh $NAME --zone $ZONE --tunnel-through-iap --command \
 - Spec coverage: tools (T8), rules incl. BDD 04/10/11 (T4, T8), pipeline stages and blocked/failed distinction (T7), TTL sweep (T9), storage (T2), config (T1), infra/compose/LiteLLM/Caddy (T10, T12), Claude Code connection (T11), testing (every task + T11/T13). Identity headers: open point handled in T11 step 4.
 - Types: `CheckResult.as_dict()` used in pipeline; `Repository` method names consistent (`get_or_create_job`, `claim_job`, `update_job`, `set_coolify_uuid`, `latest_job_for_app`, `expired_jobs`); `AppSpec` fields match between coolify.py and pipeline.py; `Settings` fields used (`workdir`, `apps_base_domain`, `deploy_timeout_seconds`, `lease_seconds`, `ttl_days`).
 - Known risk: `streamable_http_app(host=...)` DNS-rebinding setting — resolved in T9 note / T11.
+
+
+## Status 19.10.2026
+
+Tasks 1–12 done and verified on VM `sandbox-mcp` (35.234.71.242): e2e via LiteLLM gateway reaches `succeeded` with fake Coolify; owner resolved via sandbox token. Deviation from plan: identity is a separate `x-sandbox-token` (LiteLLM scrubs its own keys from forwarded headers), not LiteLLM headers. Task 13 (real Coolify) pending the Codex stand.
