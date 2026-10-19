@@ -1,0 +1,76 @@
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      MCP_DOMAIN: "${MCP_DOMAIN}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [litellm]
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sandbox
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: sandbox
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sandbox -d sandbox"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    command: ["--config", "/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY}"
+      LITELLM_SALT_KEY: "${LITELLM_SALT_KEY}"
+      DATABASE_URL: "postgresql://sandbox:${POSTGRES_PASSWORD}@postgres:5432/litellm"
+      SANDBOX_GATEWAY_TOKEN: "${SANDBOX_GATEWAY_TOKEN}"
+      STORE_MODEL_IN_DB: "True"
+    volumes:
+      - ./litellm/config.yaml:/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${LITELLM_LOCAL_PORT:-127.0.0.1:4000}:4000"
+
+  sandbox-mcp:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: sandbox-mcp:local
+    restart: unless-stopped
+    command: ["serve"]
+    env_file: .env
+    environment:
+      SANDBOX_DATABASE_URL: "postgresql+psycopg://sandbox:${POSTGRES_PASSWORD}@postgres:5432/sandbox"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["8080"]
+
+  sandbox-worker:
+    image: sandbox-mcp:local
+    restart: unless-stopped
+    command: ["worker"]
+    env_file: .env
+    environment:
+      SANDBOX_DATABASE_URL: "postgresql+psycopg://sandbox:${POSTGRES_PASSWORD}@postgres:5432/sandbox"
+    volumes:
+      - trivy_cache:/home/sandbox/.cache/trivy
+    depends_on: [sandbox-mcp]
+
+volumes:
+  caddy_data: {}
+  pg_data: {}
+  trivy_cache: {}

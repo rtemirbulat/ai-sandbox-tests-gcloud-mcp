@@ -1,0 +1,3 @@
+{$MCP_DOMAIN} {
+    reverse_proxy litellm:4000
+}
