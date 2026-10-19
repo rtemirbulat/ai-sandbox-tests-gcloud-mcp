@@ -10,12 +10,12 @@ G="gcloud --project $PROJECT --account $ACCOUNT --quiet"
 cd "$(dirname "$0")/.."
 [ -f deploy/.env ] || { echo "deploy/.env missing (see deploy/.env.example)"; exit 1; }
 
-tar czf /tmp/sandbox-mcp.tgz --exclude .venv --exclude .git --exclude '__pycache__' \
+COPYFILE_DISABLE=1 tar czf /tmp/sandbox-mcp.tgz --no-xattrs --exclude .venv --exclude .git --exclude '__pycache__' \
   Dockerfile pyproject.toml src deploy
 $G compute scp /tmp/sandbox-mcp.tgz "$NAME":/tmp/sandbox-mcp.tgz --zone "$ZONE" --tunnel-through-iap
 $G compute ssh "$NAME" --zone "$ZONE" --tunnel-through-iap --command '
 set -e
-until command -v docker >/dev/null; do echo "waiting for docker install..."; sleep 5; done
+until sudo docker compose version >/dev/null 2>&1; do echo "waiting for docker compose install..."; sleep 5; done
 sudo mkdir -p /opt/sandbox-mcp
 sudo tar xzf /tmp/sandbox-mcp.tgz -C /opt/sandbox-mcp
 cd /opt/sandbox-mcp
