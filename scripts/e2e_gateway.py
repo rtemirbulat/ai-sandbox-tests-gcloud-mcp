@@ -1,9 +1,9 @@
 """End-to-end check through LiteLLM MCP Gateway.
 
-usage: .venv/bin/python scripts/e2e_gateway.py <gateway_mcp_url> <virtual_key> [repo_url] [git_ref]
+usage: scripts/e2e_gateway.py <gateway_mcp_url> <virtual_key> <sandbox_token> [repo_url] [git_ref]
 
-Example: scripts/e2e_gateway.py http://localhost:4000/sandbox_mcp/mcp sk-... \
-         https://github.com/rtemirbulat/ai-sandbox-tests-gcloud-mcp main
+Example: scripts/e2e_gateway.py http://localhost:4000/sandbox_mcp/mcp sk-... <token> \
+         https://github.com/github/choosealicense.com gh-pages
 """
 
 import json
@@ -23,10 +23,10 @@ def _out(res):
 
 
 async def main() -> int:
-    url, key = sys.argv[1], sys.argv[2]
-    repo = sys.argv[3] if len(sys.argv) > 3 else "https://github.com/github/choosealicense.com"
-    ref = sys.argv[4] if len(sys.argv) > 4 else "gh-pages"
-    headers = {"Authorization": f"Bearer {key}"}
+    url, key, token = sys.argv[1], sys.argv[2], sys.argv[3]
+    repo = sys.argv[4] if len(sys.argv) > 4 else "https://github.com/github/choosealicense.com"
+    ref = sys.argv[5] if len(sys.argv) > 5 else "gh-pages"
+    headers = {"x-litellm-api-key": f"Bearer {key}", "x-sandbox-token": token}
     http = create_mcp_http_client(headers=headers)
     async with Client(streamable_http_client(url, http_client=http)) as c:
         if True:

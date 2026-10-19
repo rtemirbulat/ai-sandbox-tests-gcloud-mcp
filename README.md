@@ -42,9 +42,10 @@ coolify, pipeline), `mcp` (tools и Starlette-приложение), `worker.py`
 ```bash
 cp deploy/.env.example deploy/.env   # заполнить случайными значениями, MCP_DOMAIN=localhost
 docker compose -f deploy/compose.yaml --env-file deploy/.env up -d postgres litellm sandbox-mcp sandbox-worker
-infra/litellm-key.sh http://localhost:4000 "$LITELLM_MASTER_KEY" temirbulat_r   # virtual key
+infra/litellm-key.sh http://localhost:4000 "$LITELLM_MASTER_KEY" temirbulat_r   # LiteLLM virtual key
+docker compose -f deploy/compose.yaml --env-file deploy/.env exec sandbox-mcp sandbox-mcp token temirbulat_r  # identity token
 claude mcp add --transport http sandbox http://localhost:4000/sandbox_mcp/mcp \
-  --header "Authorization: Bearer sk-<virtual key>"
+  --header "x-litellm-api-key: Bearer sk-<virtual key>" --header "x-sandbox-token: <token>"
 ```
 
 Пока `SANDBOX_COOLIFY_FAKE=true`, деплой имитируется: задание проходит все стадии, URL
@@ -58,6 +59,8 @@ infra/create-vm.sh                    # e2-medium, Ubuntu 24.04, europe-west3-a,
 # записать MCP_DOMAIN из вывода в deploy/.env, затем:
 infra/deploy.sh                       # scp + docker compose up -d --build на VM
 curl https://$MCP_DOMAIN/health/liveliness
+infra/litellm-key.sh https://$MCP_DOMAIN "$LITELLM_MASTER_KEY" <user>   # virtual key
+infra/sandbox-token.sh <user>                                          # identity token
 ```
 
 Проект `project-c6b97dc5-607e-455a-910`, аккаунт `temirbulat_r@bi.group`. Параметры
@@ -69,7 +72,6 @@ curl https://$MCP_DOMAIN/health/liveliness
 |---|---|
 | `DATABASE_URL` | SQLAlchemy URL; в compose — PostgreSQL |
 | `GATEWAY_TOKEN` | Значение `X-Gateway-Token`, с которым LiteLLM ходит в sandbox-mcp |
-| `LITELLM_URL` | Адрес LiteLLM для проверки ключей (`/key/info`), в compose `http://litellm:4000` |
 | `COOLIFY_FAKE` | `true` — in-memory Coolify, `false` — реальный API |
 | `COOLIFY_URL`, `COOLIFY_TOKEN`, `COOLIFY_PROJECT_UUID`, `COOLIFY_SERVER_UUID`, `COOLIFY_ENVIRONMENT_NAME` | Параметры стенда Coolify |
 | `APPS_BASE_DOMAIN` | Базовый домен приложений: `<slug>.<domain>` |
@@ -81,9 +83,11 @@ curl https://$MCP_DOMAIN/health/liveliness
 - Пользовательский код не исполняется в worker: только clone и сканирование; сборка и запуск — у Coolify.
 - sandbox-mcp доступен только из docker-сети и только с заголовком `X-Gateway-Token` (LiteLLM
   добавляет его через `static_headers`); наружу открыт один порт 443 (Caddy).
-- Личность пользователя: LiteLLM форвардит `Authorization` клиента (его virtual key), sandbox-mcp
-  проверяет ключ через LiteLLM `/key/info` и берёт `user_id`. Заголовок `x-litellm-api-key`
-  LiteLLM не пробрасывает, поэтому в Claude Code используется `Authorization`.
+- Два credential на пользователя. LiteLLM virtual key (`x-litellm-api-key`) даёт доступ к MCP
+  через шлюз и учитывается в его логах. Токен песочницы (`x-sandbox-token`, выдаёт
+  `sandbox-mcp token <user>`, хранится хэш) определяет владельца приложений и заданий: чужие
+  `status` и `validate_and_deploy` отвечают `not_found`. LiteLLM намеренно вырезает свой ключ из
+  форвардимых заголовков, поэтому личность нельзя взять из него; без токена `owner=unknown`.
 - Секреты только в `deploy/.env` и `.secrets/` (вне git).
 
 ## Что ещё не сделано

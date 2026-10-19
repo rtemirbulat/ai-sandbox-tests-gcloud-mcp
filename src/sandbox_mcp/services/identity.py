@@ -1,63 +1,50 @@
-"""Resolve the calling user from the LiteLLM virtual key forwarded by the gateway.
+"""Resolve the calling user from a sandbox user token forwarded by LiteLLM.
 
-LiteLLM forwards the caller's ``Authorization`` header (configured via ``extra_headers``); it
-carries the LiteLLM virtual key. The key is a secret, so we treat it as the identity and verify
-it against LiteLLM's ``/key/info`` endpoint (a key can read its own info). Results are cached.
+Why a separate token: LiteLLM authenticates the caller with its virtual key but deliberately
+scrubs that key (and anything shaped like it) from headers forwarded upstream, so the MCP
+server can never see who holds the key. The sandbox therefore issues its own per-user token
+(``sandbox-mcp token <user>``), the client sends it as ``X-Sandbox-Token`` next to the LiteLLM
+key, LiteLLM forwards it (``extra_headers``), and we map its hash to the user.
 """
 
+import hashlib
 import logging
-import time
+import secrets
 from collections.abc import Mapping
 
-import httpx
+from sandbox_mcp.db.repo import Repository
 
 log = logging.getLogger(__name__)
-KEY_HEADER = "authorization"
+TOKEN_HEADER = "x-sandbox-token"
 UNKNOWN = "unknown"
 
 
-class IdentityResolver:
-    def __init__(
-        self,
-        litellm_url: str,
-        *,
-        cache_seconds: int = 300,
-        transport: httpx.BaseTransport | None = None,
-    ):
-        self._c = httpx.Client(base_url=litellm_url.rstrip("/"), timeout=10, transport=transport)
-        self._ttl = cache_seconds
-        self._cache: dict[str, tuple[float, str]] = {}
+def new_token() -> str:
+    # 64 hex chars: deliberately not "sk-" shaped so the gateway forwards it.
+    return secrets.token_hex(32)
+
+
+def token_hash(token: str) -> str:
+    return hashlib.sha256(token.strip().encode()).hexdigest()
+
+
+class DbIdentityResolver:
+    def __init__(self, repo: Repository):
+        self._repo = repo
 
     def resolve(self, headers: Mapping[str, str] | None) -> str:
-        key = (headers or {}).get(KEY_HEADER, "").strip()
-        if key.lower().startswith("bearer "):
-            key = key[7:].strip()
-        if not key:
-            log.info("no %s header; header names: %s", KEY_HEADER, sorted((headers or {}).keys()))
+        token = (headers or {}).get(TOKEN_HEADER, "").strip()
+        if not token:
             return UNKNOWN
-        now = time.time()
-        hit = self._cache.get(key)
-        if hit and hit[0] > now:
-            return hit[1]
-        actor = self._lookup(key)
-        self._cache[key] = (now + self._ttl, actor)
-        return actor
-
-    def _lookup(self, key: str) -> str:
-        try:
-            r = self._c.get("/key/info", headers={"Authorization": f"Bearer {key}"})
-        except httpx.HTTPError as e:
-            log.warning("key/info failed: %s", type(e).__name__)
+        user = self._repo.user_for_token_hash(token_hash(token))
+        if user is None:
+            log.warning("unknown sandbox token presented")
             return UNKNOWN
-        if r.status_code != 200:
-            log.warning("key/info returned %s", r.status_code)
-            return UNKNOWN
-        info = r.json().get("info") or {}
-        return info.get("user_id") or info.get("key_alias") or UNKNOWN
+        return user
 
 
 class StaticIdentityResolver:
-    """For tests and local runs without LiteLLM."""
+    """For tests and local runs."""
 
     def __init__(self, actor: str = UNKNOWN):
         self.actor = actor

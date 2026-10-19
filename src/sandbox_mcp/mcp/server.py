@@ -10,7 +10,7 @@ from pydantic import Field
 from sandbox_mcp.db.repo import Repository
 from sandbox_mcp.services.detect import detect_kind
 from sandbox_mcp.services.git import GitError, clone_at, validate_github_url
-from sandbox_mcp.services.identity import IdentityResolver
+from sandbox_mcp.services.identity import DbIdentityResolver
 from sandbox_mcp.services.rules import assess
 from sandbox_mcp.settings import Settings
 
@@ -46,9 +46,7 @@ def _ensure(path: str) -> str:
 
 
 def build_mcp(repo: Repository, settings: Settings, resolver=None) -> MCPServer:
-    resolver = resolver or IdentityResolver(
-        settings.litellm_url, cache_seconds=settings.identity_cache_seconds
-    )
+    resolver = resolver or DbIdentityResolver(repo)
 
     def actor_from(ctx: Context) -> str:
         return resolver.resolve(ctx.headers)

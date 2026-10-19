@@ -1,39 +1,29 @@
-import httpx
 import pytest
 from mcp import Client
 
 from sandbox_mcp.mcp.server import build_mcp
-from sandbox_mcp.services.identity import IdentityResolver, StaticIdentityResolver
+from sandbox_mcp.services.identity import DbIdentityResolver, StaticIdentityResolver, new_token
 from sandbox_mcp.settings import Settings
 
 pytestmark = pytest.mark.anyio
 
 
-def _resolver(handler):
-    return IdentityResolver("http://litellm:4000", transport=httpx.MockTransport(handler))
-
-
-def test_resolver_reads_user_from_key_info():
-    seen = []
-
-    def handler(req: httpx.Request):
-        seen.append(req.headers.get("authorization"))
-        return httpx.Response(200, json={"info": {"user_id": "alice", "key_alias": "alice-key"}})
-
-    r = _resolver(handler)
-    assert r.resolve({"authorization": "Bearer sk-1"}) == "alice"
-    assert r.resolve({"authorization": "sk-1"}) == "alice"  # cached, no 2nd call
-    assert seen == ["Bearer sk-1"]
-
-
-def test_resolver_unknown_without_key_or_on_error():
-    def handler(req: httpx.Request):
-        return httpx.Response(401, json={"error": "bad key"})
-
-    r = _resolver(handler)
+def test_db_resolver_maps_token_to_user(repo):
+    token = repo.create_user_token("alice")
+    assert len(token) == 64 and not token.startswith("sk-")
+    r = DbIdentityResolver(repo)
+    assert r.resolve({"x-sandbox-token": token}) == "alice"
+    assert r.resolve({"x-sandbox-token": f" {token} "}) == "alice"
+    assert r.resolve({"x-sandbox-token": new_token()}) == "unknown"
     assert r.resolve({}) == "unknown"
     assert r.resolve(None) == "unknown"
-    assert r.resolve({"authorization": "Bearer sk-bad"}) == "unknown"
+
+
+def test_user_may_have_several_tokens(repo):
+    t1 = repo.create_user_token("bob")
+    t2 = repo.create_user_token("bob")
+    r = DbIdentityResolver(repo)
+    assert t1 != t2 and r.resolve({"x-sandbox-token": t1}) == r.resolve({"x-sandbox-token": t2})
 
 
 async def test_status_hidden_from_other_owner(repo, tmp_path, monkeypatch, local_repo):

@@ -44,3 +44,10 @@ class Job(Base):
     lease_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class UserToken(Base):
+    __tablename__ = "user_tokens"
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

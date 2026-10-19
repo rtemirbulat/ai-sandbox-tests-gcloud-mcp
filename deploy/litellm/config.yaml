@@ -17,6 +17,6 @@ mcp_servers:
     # Service-to-service secret for sandbox-mcp (checked by its middleware).
     static_headers:
       X-Gateway-Token: os.environ/SANDBOX_GATEWAY_TOKEN
-    # Forward the caller's Authorization (their LiteLLM virtual key) so sandbox-mcp can
-    # resolve the user via LiteLLM /key/info. LiteLLM never forwards x-litellm-api-key.
-    extra_headers: ["Authorization"]
+    # Forward the caller's sandbox user token (issued by `sandbox-mcp token <user>`).
+    # LiteLLM scrubs its own virtual key from forwarded headers, so identity needs this token.
+    extra_headers: ["x-sandbox-token"]

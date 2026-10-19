@@ -3,7 +3,7 @@ from datetime import timedelta
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from sandbox_mcp.db.models import Application, Job, utcnow
+from sandbox_mcp.db.models import Application, Job, UserToken, utcnow
 from sandbox_mcp.ids import new_id, slugify
 
 
@@ -115,3 +115,17 @@ class Repository:
                     select(Job).where((Job.state == "succeeded") & (Job.expires_at < utcnow()))
                 )
             )
+
+    # user tokens (identity, see services/identity.py)
+    def create_user_token(self, user: str) -> str:
+        from sandbox_mcp.services.identity import new_token, token_hash
+
+        token = new_token()
+        with self._sf() as s, s.begin():
+            s.add(UserToken(token_hash=token_hash(token), user=user))
+        return token
+
+    def user_for_token_hash(self, digest: str) -> str | None:
+        with self._sf() as s:
+            row = s.get(UserToken, digest)
+            return row.user if row else None
