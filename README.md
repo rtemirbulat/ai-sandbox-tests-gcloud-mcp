@@ -44,7 +44,7 @@ cp deploy/.env.example deploy/.env   # заполнить случайными �
 docker compose -f deploy/compose.yaml --env-file deploy/.env up -d postgres litellm sandbox-mcp sandbox-worker
 infra/litellm-key.sh http://localhost:4000 "$LITELLM_MASTER_KEY" temirbulat_r   # virtual key
 claude mcp add --transport http sandbox http://localhost:4000/sandbox_mcp/mcp \
-  --header "x-litellm-api-key: Bearer sk-<virtual key>"
+  --header "Authorization: Bearer sk-<virtual key>"
 ```
 
 Пока `SANDBOX_COOLIFY_FAKE=true`, деплой имитируется: задание проходит все стадии, URL
@@ -68,7 +68,8 @@ curl https://$MCP_DOMAIN/health/liveliness
 | Переменная | Назначение |
 |---|---|
 | `DATABASE_URL` | SQLAlchemy URL; в compose — PostgreSQL |
-| `GATEWAY_TOKEN` | Bearer-токен, которым LiteLLM ходит в sandbox-mcp |
+| `GATEWAY_TOKEN` | Значение `X-Gateway-Token`, с которым LiteLLM ходит в sandbox-mcp |
+| `LITELLM_URL` | Адрес LiteLLM для проверки ключей (`/key/info`), в compose `http://litellm:4000` |
 | `COOLIFY_FAKE` | `true` — in-memory Coolify, `false` — реальный API |
 | `COOLIFY_URL`, `COOLIFY_TOKEN`, `COOLIFY_PROJECT_UUID`, `COOLIFY_SERVER_UUID`, `COOLIFY_ENVIRONMENT_NAME` | Параметры стенда Coolify |
 | `APPS_BASE_DOMAIN` | Базовый домен приложений: `<slug>.<domain>` |
@@ -78,13 +79,14 @@ curl https://$MCP_DOMAIN/health/liveliness
 ## Безопасность
 
 - Пользовательский код не исполняется в worker: только clone и сканирование; сборка и запуск — у Coolify.
-- sandbox-mcp доступен только из docker-сети и только с `GATEWAY_TOKEN`; наружу открыт один порт 443 (Caddy).
-- Личность пользователя берётся из заголовков LiteLLM (список `ACTOR_HEADERS` в `mcp/server.py`);
-  при их отсутствии пилот работает с `actor=unknown`, что отмечается в данных задания.
+- sandbox-mcp доступен только из docker-сети и только с заголовком `X-Gateway-Token` (LiteLLM
+  добавляет его через `static_headers`); наружу открыт один порт 443 (Caddy).
+- Личность пользователя: LiteLLM форвардит `Authorization` клиента (его virtual key), sandbox-mcp
+  проверяет ключ через LiteLLM `/key/info` и берёт `user_id`. Заголовок `x-litellm-api-key`
+  LiteLLM не пробрасывает, поэтому в Claude Code используется `Authorization`.
 - Секреты только в `deploy/.env` и `.secrets/` (вне git).
 
 ## Что ещё не сделано
 
 - Реальный Coolify: адрес и токен появятся после стенда из `../ai-sandbox-tests-gcloud`.
-- Проверка, какие заголовки идентичности LiteLLM реально пробрасывает в MCP.
 - PROD, IT-комитет, реестр систем, OpenMetadata, корпоративный Keycloak — вне пилота.

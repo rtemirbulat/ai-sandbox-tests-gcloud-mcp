@@ -17,7 +17,11 @@ from sandbox_mcp.settings import Settings
 
 
 class GatewayTokenMiddleware(BaseHTTPMiddleware):
-    """Only LiteLLM (holding SANDBOX_GATEWAY_TOKEN) may talk to the MCP endpoint."""
+    """Only LiteLLM (sending X-Gateway-Token: SANDBOX_GATEWAY_TOKEN) may talk to the MCP endpoint.
+
+    Authorization is left to the caller's LiteLLM virtual key, forwarded by the gateway and
+    resolved to a user by IdentityResolver.
+    """
 
     def __init__(self, app, token: str):
         super().__init__(app)
@@ -26,9 +30,8 @@ class GatewayTokenMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path == "/healthz":
             return await call_next(request)
-        auth = request.headers.get("authorization", "")
-        ok = auth.startswith("Bearer ") and hmac.compare_digest(auth[7:], self._token)
-        if not ok:
+        token = request.headers.get("x-gateway-token", "")
+        if not hmac.compare_digest(token, self._token):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
         return await call_next(request)
 

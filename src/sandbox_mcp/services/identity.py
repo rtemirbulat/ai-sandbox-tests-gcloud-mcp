@@ -1,8 +1,8 @@
 """Resolve the calling user from the LiteLLM virtual key forwarded by the gateway.
 
-LiteLLM forwards only client-supplied headers (``extra_headers``), which a client could spoof.
-The virtual key itself is a secret, so we treat it as the identity and verify it against
-LiteLLM's ``/key/info`` endpoint (the key can read its own info). Results are cached briefly.
+LiteLLM forwards the caller's ``Authorization`` header (configured via ``extra_headers``); it
+carries the LiteLLM virtual key. The key is a secret, so we treat it as the identity and verify
+it against LiteLLM's ``/key/info`` endpoint (a key can read its own info). Results are cached.
 """
 
 import logging
@@ -12,7 +12,7 @@ from collections.abc import Mapping
 import httpx
 
 log = logging.getLogger(__name__)
-KEY_HEADER = "x-litellm-api-key"
+KEY_HEADER = "authorization"
 UNKNOWN = "unknown"
 
 
@@ -33,6 +33,7 @@ class IdentityResolver:
         if key.lower().startswith("bearer "):
             key = key[7:].strip()
         if not key:
+            log.info("no %s header; header names: %s", KEY_HEADER, sorted((headers or {}).keys()))
             return UNKNOWN
         now = time.time()
         hit = self._cache.get(key)

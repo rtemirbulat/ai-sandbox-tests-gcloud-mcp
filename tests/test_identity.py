@@ -21,8 +21,8 @@ def test_resolver_reads_user_from_key_info():
         return httpx.Response(200, json={"info": {"user_id": "alice", "key_alias": "alice-key"}})
 
     r = _resolver(handler)
-    assert r.resolve({"x-litellm-api-key": "Bearer sk-1"}) == "alice"
-    assert r.resolve({"x-litellm-api-key": "sk-1"}) == "alice"  # cached, no 2nd call
+    assert r.resolve({"authorization": "Bearer sk-1"}) == "alice"
+    assert r.resolve({"authorization": "sk-1"}) == "alice"  # cached, no 2nd call
     assert seen == ["Bearer sk-1"]
 
 
@@ -33,7 +33,7 @@ def test_resolver_unknown_without_key_or_on_error():
     r = _resolver(handler)
     assert r.resolve({}) == "unknown"
     assert r.resolve(None) == "unknown"
-    assert r.resolve({"x-litellm-api-key": "Bearer sk-bad"}) == "unknown"
+    assert r.resolve({"authorization": "Bearer sk-bad"}) == "unknown"
 
 
 async def test_status_hidden_from_other_owner(repo, tmp_path, monkeypatch, local_repo):

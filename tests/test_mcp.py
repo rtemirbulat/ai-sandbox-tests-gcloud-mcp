@@ -112,13 +112,15 @@ async def test_healthz_open_and_mcp_requires_token(tmp_path):
         async with httpx.AsyncClient(transport=tr, base_url="http://t") as c:
             assert (await c.get("/healthz")).status_code == 200
             assert (await c.post("/mcp", json={})).status_code == 401
-            r = await c.post("/mcp", json={}, headers={"Authorization": "Bearer wrong"})
+            r = await c.post("/mcp", json={}, headers={"X-Gateway-Token": "wrong"})
+            assert r.status_code == 401
+            r = await c.post("/mcp", json={}, headers={"Authorization": "Bearer secret"})
             assert r.status_code == 401
             r = await c.post(
                 "/mcp",
                 json={"jsonrpc": "2.0", "id": 1, "method": "ping"},
                 headers={
-                    "Authorization": "Bearer secret",
+                    "X-Gateway-Token": "secret",
                     "Accept": "application/json, text/event-stream",
                     "Content-Type": "application/json",
                 },
