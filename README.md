@@ -37,6 +37,51 @@ make lint           # ruff
 Структура: `src/sandbox_mcp/db` (модели, репозиторий), `services` (git, detect, rules, scanners,
 coolify, pipeline), `mcp` (tools и Starlette-приложение), `worker.py`, `cli.py`.
 
+## Подключение Claude Code (для сотрудника)
+
+Пилотный шлюз: `https://mcp.35-234-71-242.sslip.io`. Для подключения нужны два credential,
+которые выдаёт администратор песочницы (см. ниже «Выдача доступа»):
+
+| Credential | Заголовок | Что даёт |
+|---|---|---|
+| LiteLLM virtual key (`sk-...`) | `x-litellm-api-key: Bearer sk-...` | Доступ к MCP через шлюз, логи и лимиты LiteLLM |
+| Токен песочницы (64 hex) | `x-sandbox-token: <token>` | Личность: владелец приложений и заданий |
+
+1. Зарегистрировать сервер в Claude Code (один раз, на уровне пользователя):
+
+   ```bash
+   claude mcp add --scope user --transport http sandbox \
+     https://mcp.35-234-71-242.sslip.io/sandbox_mcp/mcp \
+     --header "x-litellm-api-key: Bearer sk-ВАШ_КЛЮЧ" \
+     --header "x-sandbox-token: ВАШ_ТОКЕН"
+   ```
+
+2. Проверить: `claude mcp list` должен показать `sandbox ... ✔ Connected`. В Claude Code
+   появятся инструменты `sandbox_mcp-assess_application`, `sandbox_mcp-validate_and_deploy`,
+   `sandbox_mcp-status`.
+
+3. Рабочий сценарий в Claude Code: запушить код в публичный GitHub-репозиторий, затем попросить
+   Claude «оценить приложение из <repo> и выпустить его в TEST». Claude вызовет
+   `assess_application` → `validate_and_deploy` → `status` и вернёт URL вида
+   `https://<slug>.sandbox.34-179-210-136.sslip.io` со сроком жизни 14 дней. Если `status`
+   вернул `blocked`, нужно исправить код (секреты, уязвимости HIGH/CRITICAL) и повторить с новым
+   commit; `failed` означает ошибку платформы, повторить с новым `idempotency_key`.
+
+Удалить подключение: `claude mcp remove sandbox -s user`. Оба credential личные, в чат, git и
+общие документы не копировать; при утечке администратор отзывает ключ в LiteLLM
+(`POST /key/delete`) и выдаёт новый токен песочницы.
+
+### Выдача доступа (администратор)
+
+```bash
+set -a; . deploy/.env; set +a
+infra/litellm-key.sh https://mcp.35-234-71-242.sslip.io "$LITELLM_MASTER_KEY" <login>   # печатает JSON с полем key
+infra/sandbox-token.sh <login>                                                          # печатает токен один раз
+```
+
+`<login>` — корпоративный логин сотрудника; он станет `owner` приложений. Токен хранится в базе
+только в виде sha256, повторно его показать нельзя, при утере выпускается новый.
+
 ## Локальный стек
 
 ```bash
@@ -59,8 +104,8 @@ infra/create-vm.sh                    # e2-medium, Ubuntu 24.04, europe-west3-a,
 # записать MCP_DOMAIN из вывода в deploy/.env, затем:
 infra/deploy.sh                       # scp + docker compose up -d --build на VM
 curl https://$MCP_DOMAIN/health/liveliness
-infra/litellm-key.sh https://$MCP_DOMAIN "$LITELLM_MASTER_KEY" <user>   # virtual key
-infra/sandbox-token.sh <user>                                          # identity token
+infra/litellm-key.sh https://$MCP_DOMAIN "$LITELLM_MASTER_KEY" <login>  # virtual key (см. «Выдача доступа»)
+infra/sandbox-token.sh <login>                                          # identity token
 ```
 
 Проект `project-c6b97dc5-607e-455a-910`, аккаунт `temirbulat_r@bi.group`. Параметры
