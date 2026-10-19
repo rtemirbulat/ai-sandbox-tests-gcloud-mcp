@@ -90,8 +90,7 @@ class Repository:
             q = (
                 select(Job)
                 .where(
-                    (Job.state == "queued")
-                    | ((Job.state == "running") & (Job.lease_until < now))
+                    (Job.state == "queued") | ((Job.state == "running") & (Job.lease_until < now))
                 )
                 .order_by(Job.created_at)
                 .limit(1)
