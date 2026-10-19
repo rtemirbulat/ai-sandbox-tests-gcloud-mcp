@@ -18,6 +18,7 @@ class Application(Base):
     owner: Mapped[str] = mapped_column(String(200))
     slug: Mapped[str] = mapped_column(String(60), unique=True)
     repo_url: Mapped[str] = mapped_column(Text)
+    git_ref: Mapped[str] = mapped_column(String(200), default="main")
     app_name: Mapped[str] = mapped_column(String(200))
     purpose: Mapped[str] = mapped_column(Text)
     data_classes: Mapped[list] = mapped_column(JSON)

@@ -140,6 +140,7 @@ def _app(repo, url, kind="static"):
     return repo.create_application(
         owner="u",
         repo_url=url,
+        git_ref="main",
         app_name="Demo",
         purpose="p",
         data_classes=["none"],
@@ -161,6 +162,9 @@ def test_happy_path_then_redeploy(repo, settings, local_repo, quiet_scanners):
         "clone", "detect", "gitleaks", "trivy", "coolify_create", "coolify_deploy", "smoke",
     ]  # fmt: skip
     assert repo.get_application(app.app_id).coolify_uuid == "fake-app-1"
+    assert (
+        coolify.apps["fake-app-1"].branch == "main" and coolify.apps["fake-app-1"].commit_sha == sha
+    )
     assert j.checks[-1]["result"] == "skipped"  # fake Coolify: smoke is skipped
     # second deploy reuses the Coolify application
     job2, _ = repo.get_or_create_job(app.app_id, sha, "TEST", "k2")

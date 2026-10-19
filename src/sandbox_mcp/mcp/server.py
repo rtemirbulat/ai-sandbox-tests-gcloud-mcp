@@ -85,6 +85,7 @@ def build_mcp(repo: Repository, settings: Settings, resolver=None) -> MCPServer:
         app = repo.create_application(
             owner=actor_from(ctx),
             repo_url=url,
+            git_ref=git_ref,
             app_name=app_name,
             purpose=purpose,
             data_classes=data_classes,

@@ -78,7 +78,7 @@ def run_job(job_id: str, repo: Repository, settings: Settings, coolify: CoolifyC
         spec = AppSpec(
             name=f"{app.slug}-{app.app_id[-6:]}",
             repo_url=app.repo_url,
-            branch="main",
+            branch=app.git_ref,
             commit_sha=sha,
             build_pack=BUILD_PACK[kind],
             publish_directory=publish_directory(src),
