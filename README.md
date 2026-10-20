@@ -82,6 +82,14 @@ infra/sandbox-token.sh <login>                                                  
 `<login>` — корпоративный логин сотрудника; он станет `owner` приложений. Токен хранится в базе
 только в виде sha256, повторно его показать нельзя, при утере выпускается новый.
 
+### Админка LiteLLM
+
+UI шлюза: `https://mcp.35-234-71-242.sslip.io/ui/` (Caddy проксирует весь LiteLLM, включая UI и API).
+Вход: имя пользователя `admin`, пароль = `LITELLM_MASTER_KEY` из `deploy/.env`. В UI видны virtual keys
+(Virtual Keys), журнал вызовов tools (Logs), MCP-серверы (MCP Servers → `sandbox_mcp`) и пользователи.
+Отдельные логин и пароль можно задать переменными `UI_USERNAME` / `UI_PASSWORD` в compose для сервиса litellm.
+API того же шлюза: `curl -H "Authorization: Bearer $LITELLM_MASTER_KEY" https://mcp.35-234-71-242.sslip.io/key/list`.
+
 ## Локальный стек
 
 ```bash
