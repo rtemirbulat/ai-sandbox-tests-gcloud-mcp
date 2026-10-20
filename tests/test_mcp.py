@@ -155,3 +155,20 @@ def test_tick_and_sweep(repo, monkeypatch):
     repo.update_job(job.job_id, state="succeeded", expires_at=utcnow() - timedelta(days=1))
     assert worker.sweep_expired(repo, coolify) == 1
     assert repo.get_job(job.job_id).state == "expired" and uuid not in coolify.apps
+
+
+async def test_prompts_listed_and_rendered(mcp):
+    async with Client(mcp, raise_exceptions=True) as c:
+        names = sorted(p.name for p in (await c.list_prompts()).prompts)
+        assert names == ["check_status", "classify", "publish"]
+        r = await c.get_prompt(
+            "publish", {"repo_url": "https://github.com/o/r", "app_name": "Demo"}
+        )
+        text = r.messages[0].content.text
+        assert "https://github.com/o/r" in text and "Demo" in text
+        assert "assess_application" in text and "validate_and_deploy" in text and "PROD" in text
+        r3 = await c.get_prompt("classify", {"idea": "табель выхода по ФИО"})
+        t3 = r3.messages[0].content.text
+        assert "табель выхода по ФИО" in t3 and "T4б" in t3 and "модификатор" in t3.lower()
+        r2 = await c.get_prompt("check_status", {"job_id": "job_1"})
+        assert "job_1" in r2.messages[0].content.text

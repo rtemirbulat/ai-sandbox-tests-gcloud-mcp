@@ -26,6 +26,22 @@ Claude Code ──HTTPS──▶ Caddy ──▶ LiteLLM (/sandbox_mcp/mcp, virt
 Состояния задания: `queued → running → succeeded | blocked | failed`, затем `expired` по TTL.
 `blocked` — проверки не пройдены, нужно исправить код; `failed` — ошибка платформы или деплоя.
 
+## Промпты MCP (слэш-команды в Claude Code)
+
+Кроме инструментов сервер отдаёт MCP-промпты. LiteLLM проксирует `prompts/list`, Claude Code показывает их
+как слэш-команды `/mcp__sandbox__<имя>`. Тексты лежат в `src/sandbox_mcp/mcp/playbooks/*.md`, правятся
+без изменения кода и раздаются всем подключённым сразу после деплоя: это замена «скиллу через шлюз».
+
+| Промпт | Что делает |
+|---|---|
+| `/mcp__sandbox__classify` | Категория разработки T0–T4 по данным, аудитории и интеграциям, модификаторы (файлы, ИИ, запись в системы, внешние пользователи), маршрут и срок до прода по целевой модели |
+| `/mcp__sandbox__publish` | Пошагово: классификация → подготовка кода без секретов → push в публичный GitHub → `assess_application` → `validate_and_deploy` → `status` до URL |
+| `/mcp__sandbox__check_status` | Как читать `status` и что делать при `blocked`, `failed`, `succeeded` |
+
+Промпты принимают аргументы (`repo_url`, `app_name`, `idea`, `job_id`), Claude Code спросит их при вызове.
+Настоящие скиллы Claude Code (SKILL.md, плагины) через LiteLLM не раздаются: для них нужен marketplace-репозиторий
+и managed settings; промпты MCP покрывают тот же сценарий без установки у сотрудника.
+
 ## Разработка
 
 ```bash
