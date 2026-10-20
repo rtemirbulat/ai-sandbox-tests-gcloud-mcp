@@ -12,7 +12,7 @@ Claude Code ──HTTPS──▶ Caddy ──▶ LiteLLM (/sandbox_mcp/mcp, virt
 ```
 
 Документы: [дизайн](docs/superpowers/specs/2026-10-19-sandbox-mcp-design.md),
-[план реализации](docs/superpowers/plans/2026-10-19-sandbox-mcp.md). Контекст платформы — в
+[план реализации](docs/superpowers/plans/2026-10-19-sandbox-mcp.md), [runbook для DevOps](docs/OPERATIONS.md). Контекст платформы — в
 родительской папке (`PROJECT_CONTEXT.md`, `sandbox-v4-decisions-*.md`, `sandbox-final-v5-bdd.md`).
 
 ## Инструменты MCP
