@@ -26,7 +26,7 @@ GCP-проект `project-c6b97dc5-607e-455a-910`, аккаунт `temirbulat_r@
 | Сервис | Образ | Порты | Назначение | Состояние |
 |---|---|---|---|---|
 | `caddy` | caddy:2 | 0.0.0.0:80, 0.0.0.0:443 | TLS (Let's Encrypt, авто), reverse proxy → litellm:4000 | volume `deploy_caddy_data` (сертификаты) |
-| `litellm` | ghcr.io/berriai/litellm:main-stable (плавающий тег) | 127.0.0.1:4000 | MCP Gateway: virtual keys, `/sandbox_mcp/mcp`, логи вызовов | база `litellm` в postgres |
+| `litellm` | ghcr.io/berriai/litellm:v1.94.1 (зафиксировано 20.10.2026) | 127.0.0.1:4000 | MCP Gateway: virtual keys, `/sandbox_mcp/mcp`, логи вызовов | база `litellm` в postgres |
 | `sandbox-mcp` | sandbox-mcp:local (собирается из `Dockerfile`) | 8080 только в сети compose | MCP-сервер, 3 tools, принимает только `X-Gateway-Token` | stateless |
 | `sandbox-worker` | тот же образ, команда `worker` | нет | клон по SHA, Gitleaks 8.30, Trivy 0.76, Coolify API, smoke, TTL-уборка раз в час | volume `deploy_trivy_cache` |
 | `postgres` | postgres:16 | 5432 только в сети compose | базы `sandbox` (applications, jobs, user_tokens) и `litellm` | volume `deploy_pg_data` |
@@ -87,7 +87,7 @@ gcloud compute ssh sandbox-mcp --zone europe-west3-a --tunnel-through-iap --comm
 # состояние заданий
 ... --command 'cd /opt/sandbox-mcp && sudo docker compose -f deploy/compose.yaml --env-file deploy/.env exec -T postgres psql -U sandbox -d sandbox -c "select job_id,state,stage,url,updated_at from jobs order by created_at desc limit 20;"'
 # выдать доступ сотруднику
-set -a; . deploy/.env; set +a
+export LITELLM_MASTER_KEY=$(grep ^LITELLM_MASTER_KEY= deploy/.env | cut -d= -f2-)  # не source: в значениях бывают | и $
 infra/litellm-key.sh https://mcp.35-234-71-242.sslip.io "$LITELLM_MASTER_KEY" <login>
 infra/sandbox-token.sh <login>
 # сквозная проверка
@@ -103,7 +103,7 @@ Coolify VM: запуск после планового STOP — `gcloud compute 
 
 ## 6. Известные риски и что сделать до расширения пилота
 
-1. **Образ LiteLLM `main-stable` без фиксации версии**: при `pull` поведение шлюза может измениться. Зафиксировать тег.
+1. **Версия LiteLLM зафиксирована (`v1.94.1`)**: обновлять осознанно, после прогона `scripts/e2e_gateway.py`.
 2. **Эфемерный IP `sandbox-mcp`**: смена адреса меняет домен sslip.io и ломает подключения у всех сотрудников. Зарезервировать статический IP.
 3. **Нет бэкапов `deploy_pg_data`**: потеря базы = потеря user_tokens и истории заданий (ключи LiteLLM тоже в этой базе). Минимум: `pg_dump` по cron в GCS-бакет или снапшоты диска.
 4. **`default-allow-ssh` и `default-allow-rdp`** на сети `default`: закрыть, оставить IAP.

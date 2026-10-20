@@ -27,7 +27,7 @@ services:
       retries: 20
 
   litellm:
-    image: ghcr.io/berriai/litellm:main-stable
+    image: ghcr.io/berriai/litellm:v1.94.1  # pinned; bump deliberately
     restart: unless-stopped
     command: ["--config", "/config.yaml", "--port", "4000"]
     environment:

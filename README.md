@@ -74,7 +74,7 @@ coolify, pipeline), `mcp` (tools и Starlette-приложение), `worker.py`
 ### Выдача доступа (администратор)
 
 ```bash
-set -a; . deploy/.env; set +a
+export LITELLM_MASTER_KEY=$(grep ^LITELLM_MASTER_KEY= deploy/.env | cut -d= -f2-)  # не source: в значениях бывают | и $
 infra/litellm-key.sh https://mcp.35-234-71-242.sslip.io "$LITELLM_MASTER_KEY" <login>   # печатает JSON с полем key
 infra/sandbox-token.sh <login>                                                          # печатает токен один раз
 ```
