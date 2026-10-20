@@ -37,12 +37,13 @@ LiteLLM 1.94.1 умеет быть marketplace для Claude Code (страни�
 | `sandbox-classify` | Идея или проект: уровень риска T0–T4, модификаторы (файлы, ИИ, запись в системы, внешние пользователи), маршрут и срок до прода по целевой модели BI Sandbox |
 | `sandbox-publish` | «Опубликуй / задеплой / дай ссылку»: классификация → код без секретов → push в публичный GitHub → `assess_application` → `validate_and_deploy` → `status` |
 | `sandbox-status` | «Что с деплоем, почему blocked»: как читать `status` и что делать дальше |
+| `sandbox-package` | «Упакуй / подготовь ZIP»: PRD.md по шаблону, чистка секретов, ZIP и куда его нести (GitHub-путь пилота, MVP с загрузкой ZIP, комитет для T3–T4) |
 
 Подключение у сотрудника (один раз):
 
 ```bash
 claude plugin marketplace add https://mcp.35-234-71-242.sslip.io/claude-code/marketplace.json
-claude plugin install sandbox-publish@litellm sandbox-classify@litellm sandbox-status@litellm
+claude plugin install sandbox-publish@litellm sandbox-classify@litellm sandbox-status@litellm sandbox-package@litellm
 ```
 
 Регистрация и обновление (администратор, мастер-ключ): `POST /claude-code/plugins` с `source: git-subdir`,
