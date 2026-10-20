@@ -1,0 +1,33 @@
+{
+  "name": "bi-sandbox",
+  "owner": { "name": "BI Sandbox pilot", "email": "temirbulat_r@bi.group" },
+  "metadata": {
+    "description": "Скиллы Claude Code для песочницы BI: классификация T0–T4, публикация в TEST через MCP sandbox, статус выпуска"
+  },
+  "plugins": [
+    {
+      "name": "sandbox-classify",
+      "source": "./skills/sandbox-classify",
+      "description": "Классификация разработки по уровню риска T0–T4 и маршрут для каждого уровня",
+      "version": "0.1.0",
+      "category": "engineering",
+      "keywords": ["sandbox", "T0-T4", "classification"]
+    },
+    {
+      "name": "sandbox-publish",
+      "source": "./skills/sandbox-publish",
+      "description": "Выпустить приложение в песочницу BI (TEST) через MCP sandbox",
+      "version": "0.1.0",
+      "category": "engineering",
+      "keywords": ["sandbox", "deploy", "coolify"]
+    },
+    {
+      "name": "sandbox-status",
+      "source": "./skills/sandbox-status",
+      "description": "Проверить и объяснить статус выпуска в песочнице BI",
+      "version": "0.1.0",
+      "category": "engineering",
+      "keywords": ["sandbox", "status"]
+    }
+  ]
+}
