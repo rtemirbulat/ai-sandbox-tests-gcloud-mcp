@@ -26,21 +26,31 @@ Claude Code ──HTTPS──▶ Caddy ──▶ LiteLLM (/sandbox_mcp/mcp, virt
 Состояния задания: `queued → running → succeeded | blocked | failed`, затем `expired` по TTL.
 `blocked` — проверки не пройдены, нужно исправить код; `failed` — ошибка платформы или деплоя.
 
-## Промпты MCP (слэш-команды в Claude Code)
+## Скиллы Claude Code через LiteLLM Skills Gateway
 
-Кроме инструментов сервер отдаёт MCP-промпты. LiteLLM проксирует `prompts/list`, Claude Code показывает их
-как слэш-команды `/mcp__sandbox__<имя>`. Тексты лежат в `src/sandbox_mcp/mcp/playbooks/*.md`, правятся
-без изменения кода и раздаются всем подключённым сразу после деплоя: это замена «скиллу через шлюз».
+LiteLLM 1.94.1 умеет быть marketplace для Claude Code (страница Skills в UI, API `/claude-code/plugins`).
+Скиллы лежат в этом репозитории в `skills/<name>/SKILL.md`, LiteLLM хранит ссылку на git-подкаталог и
+раздаёт манифест `https://mcp.35-234-71-242.sslip.io/claude-code/marketplace.json` (без авторизации).
 
-| Промпт | Что делает |
+| Скилл | Когда срабатывает |
 |---|---|
-| `/mcp__sandbox__classify` | Категория разработки T0–T4 по данным, аудитории и интеграциям, модификаторы (файлы, ИИ, запись в системы, внешние пользователи), маршрут и срок до прода по целевой модели |
-| `/mcp__sandbox__publish` | Пошагово: классификация → подготовка кода без секретов → push в публичный GitHub → `assess_application` → `validate_and_deploy` → `status` до URL |
-| `/mcp__sandbox__check_status` | Как читать `status` и что делать при `blocked`, `failed`, `succeeded` |
+| `sandbox-classify` | Идея или проект: уровень риска T0–T4, модификаторы (файлы, ИИ, запись в системы, внешние пользователи), маршрут и срок до прода по целевой модели BI Sandbox |
+| `sandbox-publish` | «Опубликуй / задеплой / дай ссылку»: классификация → код без секретов → push в публичный GitHub → `assess_application` → `validate_and_deploy` → `status` |
+| `sandbox-status` | «Что с деплоем, почему blocked»: как читать `status` и что делать дальше |
 
-Промпты принимают аргументы (`repo_url`, `app_name`, `idea`, `job_id`), Claude Code спросит их при вызове.
-Настоящие скиллы Claude Code (SKILL.md, плагины) через LiteLLM не раздаются: для них нужен marketplace-репозиторий
-и managed settings; промпты MCP покрывают тот же сценарий без установки у сотрудника.
+Подключение у сотрудника (один раз):
+
+```bash
+claude plugin marketplace add https://mcp.35-234-71-242.sslip.io/claude-code/marketplace.json
+claude plugin install sandbox-publish@litellm sandbox-classify@litellm sandbox-status@litellm
+```
+
+Регистрация и обновление (администратор, мастер-ключ): `POST /claude-code/plugins` с `source: git-subdir`,
+`url` этого репозитория и `path: skills/<name>`, затем `POST /claude-code/plugins/<name>/enable`. После правки
+SKILL.md достаточно `git push`; сотрудники получают новую версию через `claude plugin update`.
+
+Те же тексты сервер отдаёт и как MCP-промпты (`/mcp__sandbox__publish`, `classify`, `check_status`), они
+работают без установки скиллов, но скилл срабатывает сам по контексту разговора, а промпт нужно вызывать явно.
 
 ## Разработка
 
